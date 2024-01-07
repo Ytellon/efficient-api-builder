@@ -9,6 +9,7 @@ readme = "README.md"
 python = "^3.11"
 fastapi = "^0.108.0"
 uvicorn = "^0.25.0"
+pydantic = {extras = ["email"], version = "^2.5.3"}
 
 [tool.ruff]
 line-length = 79
@@ -28,9 +29,9 @@ extend-exclude = '(migrations/)'
 [tool.taskipy.tasks]
 lint = 'ruff . && blue --check . --diff'
 format = 'blue .  && isort .'
-run = 'uvicorn efficientapi_builder.app:app --reload'
+run = 'uvicorn api.app:app --reload'
 pre_test = 'task lint'
-test = 'pytest -s -x --cov=efficientapi_builder -vv'
+test = 'pytest -s -x --cov=api -vv'
 post_test = 'coverage html'
 
 [tool.poetry.group.dev.dependencies]
