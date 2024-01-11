@@ -1,3 +1,6 @@
+from api.schemas import UserPublic
+
+
 def test_root_deve_retornar_200_e_ola_mundo(client):
     response = client.get('/')
 
@@ -50,3 +53,9 @@ def test_delete_user(client):
 
     assert response.status_code == 200
     assert response.json() == {'detail': 'User deleted'}
+
+
+def test_read_users_with_users(client, user):
+    user_schema = UserPublic.model_validate(user).model_dump()
+    response = client.get('/users/')
+    assert response.json() == {'users': [user_schema]}

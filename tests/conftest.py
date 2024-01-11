@@ -6,7 +6,7 @@ from sqlalchemy.pool import StaticPool
 
 from api.app import app
 from api.database import get_session
-from api.models import Base
+from api.models import Base, User
 
 
 @pytest.fixture
@@ -35,3 +35,13 @@ def client(session):
         yield client
 
     app.dependency_overrides.clear()
+
+
+@pytest.fixture
+def user(session):
+    user = User(username='Teste', email='teste@test.com', password='testtest')
+    session.add(user)
+    session.commit()
+    session.refresh(user)
+
+    return user
