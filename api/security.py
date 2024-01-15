@@ -11,19 +11,19 @@ from api.database import get_session
 from api.models import User
 from api.schemas import TokenData
 
-SECRET_KEY = "your-secret-key"  # Isso é provisório, vamos ajustar!
-ALGORITHM = "HS256"
+SECRET_KEY = 'your-secret-key'  # Isso é provisório, vamos ajustar!
+ALGORITHM = 'HS256'
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+pwd_context = CryptContext(schemes=['bcrypt'], deprecated='auto')
 
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl='token')
 
 
 def create_access_token(data: dict):
     to_encode = data.copy()
     expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    to_encode.update({"exp": expire})
+    to_encode.update({'exp': expire})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
@@ -42,20 +42,22 @@ async def get_current_user(
 ):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
+        detail='Could not validate credentials',
+        headers={'WWW-Authenticate': 'Bearer'},
     )
 
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        username: str = payload.get("sub")
+        username: str = payload.get('sub')
         if not username:
             raise credentials_exception
         token_data = TokenData(username=username)
     except JWTError:
         raise credentials_exception
 
-    user = session.scalar(select(User).where(User.email == token_data.username))
+    user = session.scalar(
+        select(User).where(User.email == token_data.username)
+    )
 
     if user is None:
         raise credentials_exception
