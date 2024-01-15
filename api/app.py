@@ -1,4 +1,5 @@
 from fastapi import Depends, FastAPI, HTTPException
+from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -6,7 +7,6 @@ from api.database import get_session
 from api.models import User
 from api.schemas import Message, Token, UserList, UserPublic, UserSchema
 from api.security import (
-    OAuth2PasswordRequestForm,
     create_access_token,
     get_password_hash,
     verify_password,

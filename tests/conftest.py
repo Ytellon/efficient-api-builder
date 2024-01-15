@@ -49,4 +49,6 @@ def user(session):
     session.commit()
     session.refresh(user)
 
+    user.clean_password = 'testtest'
+
     return user
