@@ -10,6 +10,7 @@ from api.security import (
     create_access_token,
     get_password_hash,
     verify_password,
+    get_current_user,
 )
 
 app = FastAPI()
@@ -17,21 +18,17 @@ app = FastAPI()
 database = []
 
 
-@app.get('/')
+@app.get("/")
 def read_root():
-    return {'message': 'Ping'}
+    return {"message": "Ping"}
 
 
-@app.post('/users/', response_model=UserPublic, status_code=201)
+@app.post("/users/", response_model=UserPublic, status_code=201)
 def create_user(user: UserSchema, session: Session = Depends(get_session)):
-    db_user = session.scalar(
-        select(User).where(User.username == user.username)
-    )
+    db_user = session.scalar(select(User).where(User.username == user.username))
 
     if db_user:
-        raise HTTPException(
-            status_code=400, detail='Username already registered'
-        )
+        raise HTTPException(status_code=400, detail="Username already registered")
 
     hashed_password = get_password_hash(user.password)
 
@@ -47,21 +44,25 @@ def create_user(user: UserSchema, session: Session = Depends(get_session)):
     return db_user
 
 
-@app.get('/users/', response_model=UserList)
+@app.get("/users/", response_model=UserList)
 def read_users(
     skip: int = 0, limit: int = 100, session: Session = Depends(get_session)
 ):
     users = session.scalars(select(User).offset(skip).limit(limit)).all()
-    return {'users': users}
+    return {"users": users}
 
 
-@app.put('/users/{user_id}', response_model=UserPublic)
+@app.put("/users/{user_id}", response_model=UserPublic)
 def update_user(
-    user_id: int, user: UserSchema, session: Session = Depends(get_session)
+    user_id: int,
+    user: UserSchema,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
 ):
     db_user = session.scalar(select(User).where(User.id == user_id))
-    if db_user is None:
-        raise HTTPException(status_code=404, detail='User not found')
+
+    if current_user.id != user_id:
+        raise HTTPException(status_code=400, detail="Not enough permissions")
 
     db_user.username = user.username
     db_user.password = get_password_hash(user.password)
@@ -72,20 +73,24 @@ def update_user(
     return db_user
 
 
-@app.delete('/users/{user_id}', response_model=Message)
-def delete_user(user_id: int, session: Session = Depends(get_session)):
+@app.delete("/users/{user_id}", response_model=Message)
+def delete_user(
+    user_id: int,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
     db_user = session.scalar(select(User).where(User.id == user_id))
 
-    if db_user is None:
-        raise HTTPException(status_code=404, detail='User not found')
-
+    if current_user.id != user_id:
+        raise HTTPException(status_code=400, detail="Not enough permissions")
+    
     session.delete(db_user)
     session.commit()
 
-    return {'detail': 'User deleted'}
+    return {"detail": "User deleted"}
 
 
-@app.post('/token', response_model=Token)
+@app.post("/token", response_model=Token)
 def login_for_access_token(
     form_data: OAuth2PasswordRequestForm = Depends(),
     session: Session = Depends(get_session),
@@ -93,15 +98,11 @@ def login_for_access_token(
     user = session.scalar(select(User).where(User.email == form_data.username))
 
     if not user:
-        raise HTTPException(
-            status_code=400, detail='Incorrect email or password'
-        )
+        raise HTTPException(status_code=400, detail="Incorrect email or password")
 
     if not verify_password(form_data.password, user.password):
-        raise HTTPException(
-            status_code=400, detail='Incorrect email or password'
-        )
+        raise HTTPException(status_code=400, detail="Incorrect email or password")
 
-    access_token = create_access_token(data={'sub': user.email})
+    access_token = create_access_token(data={"sub": user.email})
 
-    return {'access_token': access_token, 'token_type': 'bearer'}
+    return {"access_token": access_token, "token_type": "bearer"}
