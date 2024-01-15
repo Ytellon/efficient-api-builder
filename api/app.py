@@ -4,7 +4,13 @@ from sqlalchemy.orm import Session
 
 from api.database import get_session
 from api.models import User
-from api.schemas import Message, UserList, UserPublic, UserSchema
+from api.schemas import Message, Token, UserList, UserPublic, UserSchema
+from api.security import (
+    OAuth2PasswordRequestForm,
+    create_access_token,
+    get_password_hash,
+    verify_password,
+)
 
 app = FastAPI()
 
@@ -27,8 +33,12 @@ def create_user(user: UserSchema, session: Session = Depends(get_session)):
             status_code=400, detail='Username already registered'
         )
 
+    hashed_password = get_password_hash(user.password)
+
     db_user = User(
-        username=user.username, password=user.password, email=user.email
+        username=user.username,
+        email=user.email,
+        password=hashed_password,
     )
     session.add(db_user)
     session.commit()
@@ -54,7 +64,7 @@ def update_user(
         raise HTTPException(status_code=404, detail='User not found')
 
     db_user.username = user.username
-    db_user.password = user.password
+    db_user.password = get_password_hash(user.password)
     db_user.email = user.email
     session.commit()
     session.refresh(db_user)
@@ -73,3 +83,25 @@ def delete_user(user_id: int, session: Session = Depends(get_session)):
     session.commit()
 
     return {'detail': 'User deleted'}
+
+
+@app.post('/token', response_model=Token)
+def login_for_access_token(
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    session: Session = Depends(get_session),
+):
+    user = session.scalar(select(User).where(User.email == form_data.username))
+
+    if not user:
+        raise HTTPException(
+            status_code=400, detail='Incorrect email or password'
+        )
+
+    if not verify_password(form_data.password, user.password):
+        raise HTTPException(
+            status_code=400, detail='Incorrect email or password'
+        )
+
+    access_token = create_access_token(data={'sub': user.email})
+
+    return {'access_token': access_token, 'token_type': 'bearer'}

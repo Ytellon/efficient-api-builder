@@ -7,6 +7,7 @@ from sqlalchemy.pool import StaticPool
 from api.app import app
 from api.database import get_session
 from api.models import Base, User
+from api.security import get_password_hash
 
 
 @pytest.fixture
@@ -39,7 +40,11 @@ def client(session):
 
 @pytest.fixture
 def user(session):
-    user = User(username='Teste', email='teste@test.com', password='testtest')
+    user = User(
+        username='Teste',
+        email='teste@test.com',
+        password=get_password_hash('testtest'),
+    )
     session.add(user)
     session.commit()
     session.refresh(user)
