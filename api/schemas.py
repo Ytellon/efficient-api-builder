@@ -50,9 +50,11 @@ class TodoPublic(BaseModel):
     state: TodoState
 
 
-class TodoList(BaseModel):
-    todos: list[TodoPublic]
-
-
 class ListTodos(BaseModel):
     todos: list[TodoPublic]
+
+
+class TodoUpdate(BaseModel):
+    title: str | None = None
+    description: str | None = None
+    completed: str | None = None

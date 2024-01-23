@@ -1,4 +1,3 @@
-import factory
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
@@ -7,18 +6,9 @@ from sqlalchemy.pool import StaticPool
 
 from api.app import app
 from api.database import get_session
-from api.models import Base, User
+from api.models import Base
 from api.security import get_password_hash
-
-
-class UserFactory(factory.Factory):
-    class Meta:
-        model = User
-
-    id = factory.Sequence(lambda n: n)
-    username = factory.LazyAttribute(lambda obj: f'test{obj.id}')
-    email = factory.LazyAttribute(lambda obj: f'{obj.username}@test.com')
-    password = factory.LazyAttribute(lambda obj: f'{obj.username}@example.com')
+from tests.factories import UserFactory
 
 
 @pytest.fixture
