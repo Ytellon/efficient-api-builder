@@ -84,3 +84,24 @@ def test_token_wrong_password(client, user):
     )
     assert response.status_code == 400
     assert response.json() == {'detail': 'Incorrect email or password'}
+
+
+def test_invalid_token(client, user):
+
+    response = client.post(
+        '/auth/token',
+        data={'username': user.email, 'password': user.clean_password},
+    )
+    valid_token = response.json()
+
+  
+    invalid_token = valid_token['access_token'] + 'invalid'
+
+    response = client.post(
+        '/auth/refresh_token',
+        headers={'Authorization': f'Bearer {invalid_token}'},
+    )
+
+    assert (
+        response.status_code == 401
+    )
