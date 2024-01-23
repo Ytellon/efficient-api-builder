@@ -94,7 +94,6 @@ def test_invalid_token(client, user):
     )
     valid_token = response.json()
 
-  
     invalid_token = valid_token['access_token'] + 'invalid'
 
     response = client.post(
@@ -102,6 +101,4 @@ def test_invalid_token(client, user):
         headers={'Authorization': f'Bearer {invalid_token}'},
     )
 
-    assert (
-        response.status_code == 401
-    )
+    assert response.status_code == 401

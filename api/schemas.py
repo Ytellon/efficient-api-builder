@@ -52,3 +52,7 @@ class TodoPublic(BaseModel):
 
 class TodoList(BaseModel):
     todos: list[TodoPublic]
+
+
+class ListTodos(BaseModel):
+    todos: list[TodoPublic]
